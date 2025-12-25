@@ -4,27 +4,20 @@ Welcome to the Tic-Tac-Toe game! This guide will help you play the game using th
 
 ## Getting Started
 
-### Prerequisites
-
-Make sure the server is running before starting the client:
+### 1. Start the Server
 
 ```bash
-# In one terminal, start the server
-python -m app.server
+./run_server.sh
 ```
 
-### Starting the Client
+The server will start on `http://localhost:5000`
 
-In a new terminal, run:
+### 2. Play with CLI Client
 
-```bash
-python client.py
-```
-
-You can also specify a custom server URL:
+In a new terminal:
 
 ```bash
-python client.py http://localhost:5000
+./run_client.sh
 ```
 
 ## How to Play
