@@ -1,0 +1,300 @@
+openapi: 3.0.0
+info:
+  title: Tic-Tac-Toe Game API
+  description: REST API for playing tic-tac-toe game against the server
+  version: 1.0.0
+  contact:
+    name: API Support
+    
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+
+paths:
+  /game:
+    post:
+      summary: Create a new game
+      description: Generates a new tic-tac-toe game and returns the game ID
+      operationId: createGame
+      tags:
+        - game
+      responses:
+        '201':
+          description: Game created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameCreated'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+                
+  /games:
+    get:
+      summary: Get all games
+      description: Returns all games that have been played in chronological order
+      operationId: getAllGames
+      tags:
+        - game
+      responses:
+        '200':
+          description: List of all games
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  games:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GameSummary'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+                
+  /game/{game_id}/move:
+    post:
+      summary: Make a move
+      description: Player makes a move at specified position. Server will respond with its move and return the updated game state
+      operationId: makeMove
+      tags:
+        - game
+      parameters:
+        - name: game_id
+          in: path
+          required: true
+          description: The ID of the game
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveRequest'
+      responses:
+        '200':
+          description: Move made successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameState'
+        '400':
+          description: Bad request (invalid move)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+                
+  /game/{game_id}/moves:
+    get:
+      summary: Get all moves for a game
+      description: Returns all moves for the specified game in chronological order
+      operationId: getGameMoves
+      tags:
+        - game
+      parameters:
+        - name: game_id
+          in: path
+          required: true
+          description: The ID of the game
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of moves
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  game_id:
+                    type: string
+                  moves:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Move'
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    GameCreated:
+      type: object
+      required:
+        - game_id
+        - board
+        - status
+      properties:
+        game_id:
+          type: string
+          description: Unique identifier for the game
+        board:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+              nullable: true
+          description: 3x3 game board
+        status:
+          type: string
+          enum: [in_progress, player_wins, server_wins, draw]
+          description: Current game status
+        message:
+          type: string
+          description: Additional information about the game state
+          
+    GameState:
+      type: object
+      required:
+        - game_id
+        - board
+        - status
+      properties:
+        game_id:
+          type: string
+          description: Unique identifier for the game
+        board:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+              nullable: true
+          description: 3x3 game board (null for empty cells, 'X' for player, 'O' for server)
+        status:
+          type: string
+          enum: [in_progress, player_wins, server_wins, draw]
+          description: Current game status
+        winner:
+          type: string
+          nullable: true
+          enum: [player, server, null]
+          description: Winner of the game if completed
+        message:
+          type: string
+          description: Additional information about the game state
+          
+    GameSummary:
+      type: object
+      required:
+        - game_id
+        - status
+        - board
+        - created_at
+      properties:
+        game_id:
+          type: string
+          description: Unique identifier for the game
+        status:
+          type: string
+          enum: [in_progress, player_wins, server_wins, draw]
+          description: Final game status
+        winner:
+          type: string
+          nullable: true
+          enum: [player, server, null]
+          description: Winner of the game
+        board:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+              nullable: true
+          description: Final state of the 3x3 game board
+        created_at:
+          type: string
+          format: date-time
+          description: When the game was created
+          
+    Move:
+      type: object
+      required:
+        - player
+        - position
+        - timestamp
+      properties:
+        player:
+          type: string
+          enum: [player, server]
+          description: Who made the move
+        position:
+          type: object
+          required:
+            - row
+            - col
+          properties:
+            row:
+              type: integer
+              minimum: 0
+              maximum: 2
+              description: Row index (0-2)
+            col:
+              type: integer
+              minimum: 0
+              maximum: 2
+              description: Column index (0-2)
+        timestamp:
+          type: string
+          format: date-time
+          description: When the move was made
+          
+    MoveRequest:
+      type: object
+      required:
+        - row
+        - col
+      properties:
+        row:
+          type: integer
+          minimum: 0
+          maximum: 2
+          description: Row index (0-2) where player wants to place their mark
+        col:
+          type: integer
+          minimum: 0
+          maximum: 2
+          description: Column index (0-2) where player wants to place their mark
+          
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+        details:
+          type: string
+          description: Additional error details
+
